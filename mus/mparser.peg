@@ -1,0 +1,30 @@
+start =
+  seq
+
+seq = 
+  l:note* " " r:seq
+  {return {tag: 'seq', left: l[0], right: r};}
+  / l:note* " " r:note*
+  {return {tag: 'seq', left: l[0], right: r[0]};}
+  /note
+
+note = 
+  p:pitch "["d:duration"]"
+  {return {tag: 'note', pitch: p, dur: d};}
+
+pitch = 
+   "'"l:letter o:octave"'"
+    {return l + o;}
+
+letter =
+    [abcdefg]
+
+octave =
+  integer
+
+duration =
+  i:integer+
+  {return i.join('');}
+
+integer = 
+  [0-9]
