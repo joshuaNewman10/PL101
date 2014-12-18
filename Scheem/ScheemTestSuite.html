@@ -1,0 +1,216 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Mocha Tests</title>
+  <link rel="stylesheet"
+    href="http://nathansuniversity.com/css/mocha.css" />
+  <script src=
+    "http://nathansuniversity.com/js/jquery-1.7.1.min.js">
+  </script>
+  <script src=
+    "http://nathansuniversity.com/js/chai.js">
+  </script>
+  <script src="http://nathansuniversity.com/js/mocha.js">
+  </script>
+  <script>mocha.setup('tdd')</script>
+  <script>
+var assert = chai.assert;
+
+// My EvalScheem Interpreter Implementation
+
+var evalScheem = function (expr, env) { 
+  if (expr === 'error') throw('Error');
+
+  //Variable Defining and Setting
+  if (expr[0] === 'define') {
+      var defVar = expr[1];
+      var defVal = evalScheem(expr[2],env);
+      env[defVar] = defVal;
+      return 0;
+  } else if (expr[0] === 'set!') {
+      var setVar = expr[1];
+      var setVal = evalScheem(expr[2],env);
+      env[setVar] = setVal;
+      return 0;
+  }
+  
+  //Dealing with 'primitive values'
+  if (typeof expr === 'number') {
+      return expr;
+  } else if (typeof expr === 'string') {
+      return env[expr];
+
+  //Array of actions to be taken
+  } else if (expr[0] === 'begin') {
+      var beginExprs = expr.slice(1);
+      var beginRes;
+      beginExprs.forEach(function(e){
+        beginRes = evalScheem(e,env);
+      });
+    return beginRes;
+  } else if (expr[0] === 'if') {
+      var ifRes = evalScheem(expr[1],env);
+      return ifRes === '#t' ? evalScheem(expr[2],env) : evalScheem(expr[3],env);
+  //Types of actions
+  } else if (expr[0] === 'cons') {
+    var consHead = evalScheem(expr[1],env);
+    var consRes = evalScheem(expr[2],env);
+    consRes.unshift(consHead);
+    return consRes;
+  } else if (expr[0] === 'car') {
+    return evalScheem(expr.slice(1)[0],env).shift();
+  } else if (expr[0] === 'cdr') {
+    return evalScheem(expr.slice(1)[0],env).slice(1);
+  } else if (expr[0] === 'quote') {
+    return expr.slice(1)[0];
+  } else if (expr[0] === '=') {
+    var eq = evalScheem(expr[1],env) === evalScheem(expr[2],env);
+    return eq ? '#t' : '#f';
+  } else if (expr[0] === '<') {
+    var lt = evalScheem(expr[1],env) < evalScheem(expr[2],env);
+    return lt ? '#t' : '#f';
+  } else if (expr[0] === '*') {
+      return evalScheem(expr[1], env) * evalScheem(expr[2], env);
+  } else if (expr[0] === '/') {
+      return evalScheem(expr[1], env) / evalScheem(expr[2], env);
+  } else if (expr[0] === '+') {
+      return evalScheem(expr[1], env) + evalScheem(expr[2], env); 
+  } else {
+      return evalScheem(expr[1], env) - evalScheem(expr[2], env);
+  }
+};
+
+// Some unit tests
+
+suite('quote', function() {
+    test('a number', function() {
+        assert.deepEqual(
+            evalScheem(['quote', 3], {}),
+            3
+        );
+    });
+    test('an atom', function() {
+        assert.deepEqual(
+            evalScheem(['quote', 'dog'], {}),
+            'dog'
+        );
+    });
+    test('a list', function() {
+        assert.deepEqual(
+            evalScheem(['quote', [1, 2, 3]], {}),
+            [1, 2, 3]
+        );
+    });
+});
+suite('add', function() {
+    test('two numbers', function() {
+        assert.deepEqual(
+            evalScheem(['+', 3, 5], {}),
+            8
+        );
+    });
+    test('a number and an expression', function() {
+        assert.deepEqual(
+            evalScheem(['+', 3, ['+', 2, 2]], {}),
+            7
+        );
+    });
+    test('a dog and a cat', function() {
+        assert.deepEqual(
+            evalScheem(['+', 'dog', 'cat'], {}),
+            42
+        );
+    });
+    test('add two numbers',function() {
+        assert.deepEqual(
+            evalScheem(['+', 2, 2], {}),
+            4
+        );    
+    });
+});
+
+
+suite('environment lookup', function() {
+  test('declaration', function() {
+      var env = {};
+      evalScheem(['define', 'x', 10], env);
+      assert.deepEqual(env,{x:10});
+  });
+  test('redefining', function() {
+     evalScheem(['set!', 'x', 20], {x:10}),
+     {x:20};
+  });
+});
+
+
+suite('testing comparisons', function() {
+  test('Equality Comparison', function() {
+    assert.deepEqual(
+      evalScheem(['=', 4, 4], {}),
+      '#t');
+  });
+  test('Equality Comparison', function() {
+    assert.deepEqual(
+      evalScheem(['=', 4, 'a duck'], {}),
+      '#f');
+  });
+  test('Less than (<) comparrison', function() {
+    assert.deepEqual(
+      evalScheem(['<', 4, 100], {}),
+      '#t');
+  });
+});
+
+suite('cons, car, cdr tests', function() {
+  test('cons test', function() {
+    assert.deepEqual(
+      evalScheem(['cons', 1, ['quote', [2, 3]]], {}),
+      [1, 2, 3]);
+  });
+  test('car test', function() {
+    assert.deepEqual(
+      evalScheem(['car', ['quote', [[1, 2], 3, 4]]], {}),
+      [1,2]);
+  });
+  test('cdr test', function() {
+    assert.deepEqual(
+      evalScheem(['cdr', ['quote', [[1, 2], 3, 4]]], {}),
+      [3, 4]);
+  });
+});
+
+suite('complex multistep operations', function() {
+  test('should update environment with result', function() {
+    var env = {a:10,b:20};
+    var prg = ['begin',
+            ['define', 'x', 5],
+            ['set!', 'x', ['+', 'x', 1]],
+            ['+', 2, 'x']];
+    evalScheem(prg,env);
+    assert.deepEqual(env,{a:10,b:20,x:6});
+  });
+  test('treating programs as data (not evaluating)', function() {
+    var prog = ['set!', 'x', ['quote', [1, '#t']]];
+    var env = {'x':10};
+    evalScheem(prog,env);
+    assert.deepEqual(env,{'x': [1, '#t']});
+  });
+  test('Multipstep conditions', function() {
+    var prog = ['if', ['=', 1, 1],
+        ['if', ['=', 2, 3], 10, 11], 12];
+    assert.deepEqual(
+      evalScheem(prog, {}), 11);
+  });
+});
+
+  </script>
+  <script>
+    $(function(){
+      mocha.run();
+    });
+  </script>
+</head>
+<body>
+  <div id="mocha"></div>
+</body>
+</html>
