@@ -13,11 +13,11 @@
   <script src="http://nathansuniversity.com/js/mocha.js">
   </script>
   <script>mocha.setup('tdd')</script>
+  <script src="Scheem/ScheemParser.js"></script>
   <script>
 var assert = chai.assert;
 
 // My EvalScheem Interpreter Implementation
-
 var evalScheem = function (expr, env) { 
   if (expr === 'error') throw('Error');
 
@@ -80,8 +80,54 @@ var evalScheem = function (expr, env) {
   }
 };
 
-// Some unit tests
+function convertNumeric(char) {
+  return !isNaN(char) ? parseFloat(char) : char;
+}
+function convertToNumeric(input) { //temporary preprocessing step
+  if(typeof input === 'string') {
+    return convertNumeric(input);
+  } else {
+    var i = input.map(convertToNumeric);
+  }
+  return i;
+}
 
+function evalScheemString(str,env) {
+  var parsed = SCHEEM.parse(str);
+  console.log(parsed);
+  var processed = convertToNumeric(parsed);
+  console.log(processed);
+  return evalScheem(processed,env);
+}
+//Complete Unit Tests
+suite('Complete Tests',function() {
+  test('a number', function() {
+    assert.deepEqual(evalScheemString('3', {}),
+      3);
+  });
+  test('a complex expression', function() {
+    var env = {};
+    assert.deepEqual(evalScheemString('(+ 2 (* 3 4))', env),
+      14);
+  });
+});
+// Parsing Unit Tests
+suite('parse', function() {
+    test('a number', function() {
+        assert.deepEqual(
+            convertToNumeric(SCHEEM.parse('42')),
+            42
+        );
+    });
+    test('a variable', function() {
+        assert.deepEqual(
+            convertToNumeric(SCHEEM.parse('x')),
+            'x'
+        );
+    });
+});
+
+//Interpreter Unit Tests
 suite('quote', function() {
     test('a number', function() {
         assert.deepEqual(
