@@ -6,9 +6,9 @@
   <script src ='http://nathansuniversity.com/js/jquery-1.7.1.min.js'>
   </script>
   <link rel='stylesheet' href='ScheemCss.css'>
-  <script src='ScheemInterpreter.js'>
+  <script src='ScheemInterpreterUpdated.js'>
   </script>
-  <script src='ScheemParser.js'>
+  <script src='TempScheemParser.js'>
   </script>
 </head>
 
@@ -42,7 +42,7 @@
         var parsed = SCHEEM.parse(user_text);
         log_console('Parsed: ' + JSON.stringify(parsed));
         try {
-          var result = evalScheemString(parsed, {});
+          var result = evalScheem(parsed, {});
           log_console('Result: ' + JSON.stringify(result));
         }
         catch(e) {
