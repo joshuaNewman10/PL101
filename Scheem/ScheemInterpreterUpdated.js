@@ -60,12 +60,28 @@ var evalScheem = function (expr, env) {
   } else if (expr[0] === 'lambda-one') {
       var param = expr[1];
       var body = expr[2];
-      return function() {
+      return function(a) {
         var bnd = {};
         bnd[param] = a;
-        var newEnv = {bindings:bnd, outer:env};
-        return evalScheem(body,newEnv);
+        var lambdaOneEnv = {bindings:bnd, outer:env};
+        return evalScheem(body,lambdaOneEnv);
       };
+  } else if(expr[0] === 'lambda') {
+      var params = expr[1];
+      var body = expr[2];
+      return function() {
+        var args = Array.prototype.slice.call(arguments);
+        var bnd = {};
+        if(typeof params === 'string') {
+          bnd[params] = args[0];
+        } else {
+            for(var i=0; i<params.length; i++) {
+              bnd[params[i]] = args[i]; 
+            }
+        }
+        var lambdaEnv = {bindings:bnd, outer:env};
+        return evalScheem(body,lambdaEnv);
+      }
 
   } else if (expr[0] === 'if') {
       var ifRes = evalScheem(expr[1],env);
@@ -97,10 +113,12 @@ var evalScheem = function (expr, env) {
   } else if (expr[0] === '-') {
       return evalScheem(expr[1], env) - evalScheem(expr[2], env);
   } else {
-      console.log(func,arg);
       var func = evalScheem(expr[0], env);
-      var arg = evalScheem(expr[1], env);
-      return func(arg);
+      var args = expr.slice(1);
+      args = args.map(function(arg) {
+        return evalScheem(arg,env);
+      });
+      return func.apply(env,args);
   }
 };
 

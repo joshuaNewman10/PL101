@@ -1,4 +1,4 @@
-<html>
+  <html>
 <head>
   <meta charset="utf-8">
   <title>Mocha Tests</title>
@@ -92,13 +92,15 @@ var evalScheem = function (expr, env) {
       var params = expr[1];
       var body = expr[2];
       return function() {
-        console.log(args);
         var args = Array.prototype.slice.call(arguments);
         var bnd = {};
-        for(var i=0; i<params.length; i++) {
-          bnd[params[i]] = args[i]; 
+        if(typeof params === 'string') {
+          bnd[params] = args[0];
+        } else {
+            for(var i=0; i<params.length; i++) {
+              bnd[params[i]] = args[i]; 
+            }
         }
-        console.log(bnd);
         var lambdaEnv = {bindings:bnd, outer:env};
         return evalScheem(body,lambdaEnv);
       }
@@ -123,7 +125,7 @@ var evalScheem = function (expr, env) {
       return eq ? '#t' : '#f';
   } else if (expr[0] === '<') {
       var lt = evalScheem(expr[1],env) < evalScheem(expr[2],env);
-      return lt ? '#t' : '#f';
+      return lt ? '#t' : '#f';x
   } else if (expr[0] === '*') {
       return evalScheem(expr[1], env) * evalScheem(expr[2], env);
   } else if (expr[0] === '/') {
@@ -342,15 +344,58 @@ suite('function application', function() {
 });
 
 suite('creating function values', function() {
-  test('simple lambda one', function() {
+  test('identity function', function() {
     assert.deepEqual(evalScheem([['lambda', 'x', 'x'], 5], { }),5);
   });
-  // test('lambda plus one function', function() {
-  //   assert.deepEqual(evalScheem([[['lambda-one', 'x',
-  //   ['lambda', 'y', ['+', 'x', 'y']]], 5], 3], { }),8);
-  // });
+  test('lambda plus one function', function() {
+    assert.deepEqual(evalScheem([[['lambda-one', 'x',
+    ['lambda', 'y', ['+', 'x', 'y']]], 5], 3], { }),8);
+  });
   test('lambda add function', function() {
     assert.deepEqual(evalScheem([['lambda', ['a', 'b'],['+', 'a', 'b']], 10, 20], {}),30);
+  });
+  test('Passing result of a named function to a function as an argument', function() {
+    var identity = function (x) { return x; };
+    var bnd = {identity:identity};
+    var env = {bindings:bnd, outer:{ }};
+    assert.deepEqual(evalScheem([['lambda', 'func', 'func'], ['identity', 5]], env),5);
+  });
+  test('Passing result of an (anonymous) function to a function as an argument', function() {
+    var identity = function (x) { return x; };
+    var bnd = {identity:identity};
+    var env = {bindings:bnd, outer:{ }};
+    assert.deepEqual(evalScheem([['lambda', 'f', 'f'], [['lambda', 'x', 'x'], 5]], env),5);
+  });
+  test('closure references its own scope and outer scope', function() {
+    assert.deepEqual(evalScheem([['lambda', 'a', [['lambda','b',['+', 'a', 'b']], 4]], 10], {}), 14);
+  });
+  test('arg to function shadows global variable', function() {
+    var a = ['quote', 'GLOBAL'];
+    var bnd = {a:a};
+    var env = {bindings:bnd, outer: {}};
+    assert.deepEqual(evalScheem([['lambda', 'a', 'a'], ['quote', 'LOCAL']], env), 'LOCAL');
+  });
+  test('function modifies global variable', function() {
+    var a = 100;
+    var bnd = {a:a};
+    var env = {bindings:bnd, outer: {}};
+    evalScheem([['lambda', 'b', ['set!', 'a', 'b']], 10], env)
+    assert.deepEqual(env, {bindings: {a:10}, outer: {}});
+  });
+  test('defining a function with an if condition', function() {
+    var env = {bindings:{}, outer: {}};
+    var prog = ['define', 'condit', ['lambda', 'n', ['if', ['=', 'n', 0], 1, 5]]];
+    evalScheem(prog, env);
+    assert.deepEqual(evalScheem(['condit', 10], env), 5);
+  });
+  test('defining recursive factorial function', function() {
+    var env = {bindings:{}, outer: {}};
+    var prog = ['define', 'factorial', ['lambda', 'n', ['if', ['=', 'n', 0], 1, ['*', 'n', ['factorial',['-', 'n', 1]]]]]];
+    evalScheem(prog,env);
+    var wow = evalScheem(['factorial', 5], env);
+    console.log(wow);
+    assert.deepEqual(evalScheem(['factorial', 2], env), 2);
+
   });
 });
   </script>
