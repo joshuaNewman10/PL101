@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+
+<head>
+  <meta charset='utf-8'>
+  <link rel ='stylesheet' href='ScheemCss.css'>
+  <script src ='http://nathansuniversity.com/js/jquery-1.7.1.min.js'>
+  </script>
+  <link rel='stylesheet' href='ScheemCss.css'>
+  <script src='ScheemInterpreterUpdated.js'>
+  </script>
+  <script src='TempScheemParser.js'>
+  </script>
+</head>
+
+<body>
+  <header>
+  Scheem Live Demo
+  </header>
+  <textarea class="input">
+(+ 1 2)</textarea>
+
+<div class="submit">
+  <input type="button" value="Run!" />
+</div>
+<div class="console">
+<p>Output:</p>
+</div>
+
+
+<script>
+  // Utility function to log messages
+  var log_console = function(msg) {
+    $('.console').append('<p>' + msg + '</p>');
+  };
+  // After page load
+  $(function() {
+    $('.submit').click(function() {
+      var user_text = $('.input').val();
+      $('.console').html(''); // clear console
+      log_console('Your input was: "' + user_text + '"');
+      try {
+        var parsed = SCHEEM.parse(user_text);
+        log_console('Parsed: ' + JSON.stringify(parsed));
+        try {
+          var result = evalScheem(parsed, {});
+          log_console('Result: ' + JSON.stringify(result));
+        }
+        catch(e) {
+          log_console('Eval Error: ' + e);
+        }
+      }
+      catch(e) {
+      log_console('Parse Error: ' + e);
+      }
+    });
+  });
+</script>
+</body>
