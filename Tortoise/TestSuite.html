@@ -1,0 +1,309 @@
+  <html>
+<head>
+  <meta charset="utf-8">
+  <title>Mocha Tests</title>
+  <link rel="stylesheet"
+    href="http://nathansuniversity.com/css/mocha.css"/>
+  <script src=
+    "http://nathansuniversity.com/js/jquery-1.7.1.min.js">
+  </script>
+  <script src=
+    "http://nathansuniversity.com/js/chai.js">
+  </script>
+  <script src="http://nathansuniversity.com/js/mocha.js">
+  </script>
+  <script>mocha.setup('tdd')</script>
+  <script src="Parser.js"></script>
+  <script>
+var assert = chai.assert;
+
+var lookup = function (env, v) {
+    if (!(env.hasOwnProperty('bindings')))
+        throw new Error(v + " not found");
+    if (env.bindings.hasOwnProperty(v))
+        return env.bindings[v];
+    return lookup(env.outer, v);
+};
+
+//adds binding at top-most level
+var addBinding = function(env, v, val) {
+    if(!(env.hasOwnProperty('bindings'))) {
+      var bndg = {};
+      bndg[v] = val;
+      env.outer = {};
+      env.bindings = bndg;
+    }
+    env.bindings[v] = val;
+    return env;
+};
+
+function evalExpr(expr, env) { //recursive Tortoise expression Evaluator
+  //primitives
+  if (typeof expr === 'number') {
+    return expr;
+  } 
+  //Simple built in binary operators
+  if (expr.tag === 'ident') {
+    return lookup(env,expr.name);
+  } else if (expr.tag === '<') {
+    return evalExpr(expr.left, env) < evalExpr(expr.right, env);
+  } else if (expr.tag === '>') {
+    return evalExpr(expr.left, env) > evalExpr(expr.right, env);
+  } else if (expr.tag === '+') {
+    return evalExpr(expr.left, env) + evalExpr(expr.right, env);
+  } else if (expr.tag === '-') {
+    return evalExpr(expr.left, env) - evalExpr(expr.right, env);
+  } else if (expr.tag === '*') {
+    return evalExpr(expr.left, env) * evalExpr(expr.right, env);
+  }
+  //function values
+  else if (expr.tag === 'call') {
+    var func = lookup(env, expr.name);
+    var ev_args = [];
+    var i = 0;
+    for(; i<expr.args.length; i++) {
+      ev_args.push(evalExpr(expr.args[i], env));
+    }
+    return func.apply(null, ev_args); 
+  }
+
+}
+
+//Updates correct environment's var with new val
+var update = function (env, v, val) {
+    if(!(env.hasOwnProperty('bindings'))) {
+      return addBinding(env,v,val);
+    }
+    if(env.bindings.hasOwnProperty(v)) {
+      env.bindings[v] = val;
+      return val;
+    }
+    return update(env.outer,v,val);
+};
+
+function evalStatements(seq, env) {
+  var i;
+  var val = undefined;
+  for(i=0; i<seq.length; i++) {
+    val = evalStatement(seq[i], env);
+  }
+  return val;
+}
+
+function evalStatement(stmt, env) {
+  var val = undefined;
+  if(!(stmt.tag)) {
+    return evalExpr(stmt, env);
+  }
+
+  if (stmt.tag === 'ignore') { //single expression
+    return evalExpr(stmt.body, env); 
+  } else if (stmt.tag === 'var') {
+        addBinding(env, stmt.name, 0);
+        return 0;
+  } else if (stmt.tag === ':=') {
+        val = evalExpr(stmt.right, env);
+        update(env, stmt.left, val);
+        return val;
+  } else if (stmt.tag === 'if') {
+    var cond = evalExpr(stmt.expression, env);
+    if(cond) {
+      val = evalStatements(stmt.i, env);
+      return val;
+    } else {
+      val = evalStatements(stmt.e, env);
+      return val;
+    }
+  } else if (stmt.tag === 'define') {
+      //name args body
+      var newFunc = function() {
+        //takes any # args
+            var i;
+            var newEnv;
+            var newBindings = {};
+            for(i=0; i<stmt.args.length; i++) {
+              newBindings[stmt.args[i]] = arguments[i];
+            }
+            newEnv = {bindings:newBindings, outer: env};
+            return evalStatements(stmt.body, newEnv);
+      };
+      addBinding(env, stmt.name, newFunc); //can call self recursively
+      return 0;
+
+  } else if (stmt.tag === 'repeat') {
+    var count = evalExpr(stmt.expression, env);
+    while(--count >= 0) {
+          val = evalStatements(stmt.body, env);
+    }
+    return val;
+  } else {
+    return evalExpr(stmt, env);
+  }
+}
+
+function evalTortoise(str, env) {
+  try {
+    var parse = TORTOISE.parse(str);
+    console.log(parse);
+    var interpreted = evalStatements(parse, env);
+  } catch(e) {
+    console.log("somethign went wrong " + e);
+  }
+  return interpreted;
+}
+
+suite('Simple Parser Tests', function() {
+  test('a number', function() {
+    assert.deepEqual(TORTOISE.parse('2'), [2]);
+  });
+  test('declaring an identifier (string literal)', function() {
+    assert.deepEqual(TORTOISE.parse('hi'), [{tag:'ident', name:'hi'}]);
+  });
+  test('declaring a variable', function() {
+    assert.deepEqual(TORTOISE.parse('var josh;'), [{tag:'ident', name:'josh'}]);
+  });
+  test('defining a variable', function() {
+    assert.deepEqual(TORTOISE.parse('j := 4;'), [{tag:':=', left:'j', right:4}]);
+  });
+  test('defining a variable set to an exp result', function() {
+    assert.deepEqual(TORTOISE.parse('j := 4*3;'),[{
+   "tag": ":=",
+   "left": "j",
+   "right": {
+      "tag": "*",
+      "left": 4,
+      "right": 3
+   }
+}]);
+    });
+});
+
+suite('Complex Parser Tests', function() { //eek!
+  test('Multi-Step function expression', function() {
+    assert.deepEqual(TORTOISE.parse('f(2 + g(3) * 2, x)'), [{
+       "tag": "call",
+       "name": "f",
+       "args": [
+          {
+             "tag": "+",
+             "left": 2,
+             "right": {
+                "tag": "*",
+                "left": {
+                   "tag": "call",
+                   "name": "g",
+                   "args": [
+                      3
+                   ]
+                },
+                "right": 2
+             }
+          },
+          {
+             "tag": "ident",
+             "name": "x"
+          }
+       ]
+    }])
+  });
+
+});
+
+suite('Interpretor Tests', function() {
+  test('a number', function() {
+    assert.deepEqual(evalStatement(4, {}), 4);
+  });
+  test('a variable dec', function() {
+    console.log('var dec');
+    assert.deepEqual(evalStatement({tag:'var', name:'j'}, {}), 0);
+  });
+  test('a variable definition', function() {
+    assert.deepEqual(evalStatement({tag:':=',left:'j',right:2}, {}), 2);
+  });
+});
+
+suite('Parser and Interpretor Linked Tests', function() {
+  test('a number', function() {
+    assert.deepEqual(evalTortoise('2'), 2);
+  });
+  test('variable definition', function() {
+    var bndg = {a:2};
+    var env = {bindings:bndg, outer: {}};
+    assert.deepEqual(evalTortoise('a := 100;', env), 100);
+  });
+  test('addition', function() {
+    assert.deepEqual(evalTortoise('2 + 2', {}), 4);
+  });
+  test('multiplication', function() {
+    assert.deepEqual(evalTortoise('100 * -50',{}),-5000);
+  });
+  test('variable lookup', function() {
+    var bndgz = {a:40};
+    var envz = {bindings:bndgz, outer: {}};
+    assert.deepEqual(evalTortoise('a', envz), 40);
+  });
+  test('if statement', function() {
+    assert.deepEqual(evalTortoise('if (1<2) {4}', {}), 4)
+  });
+  test('< conditional', function() {
+    assert.deepEqual(evalTortoise('if (5>2) {2*20}',{}), 40);
+  });
+  test('define statement', function() {
+    var bndg = {a:100};
+    var env = {bindings: bndg, outer: {}};
+    assert.deepEqual(evalTortoise('a := 20;', env), 20);
+  });
+});
+
+suite('Function Tests', function() {
+  test('defining a function', function() {
+    assert.deepEqual(evalTortoise('define forward(dist) {dist+10;}', {}), 0);
+  });
+  test('calling a function', function() {
+    var env = {bindings: {}, outer: {}};
+    evalTortoise('define forward(d) {d}', env);
+    assert.deepEqual(evalTortoise('forward(100);', env), 100);
+  });
+});
+
+suite('Recursive Tests', function() {
+  test('defining a recursive function', function() {
+    var env = {bindings: {}, outer: {}};
+    assert.deepEqual(evalTortoise('define factorial(n) {if (n<1) {1} {n * factorial(n-1)} }', env), 0);
+  });
+  test('calling a recursive function', function() {
+    var env = {bindings: {}, outer: {}};
+    evalTortoise('define factorial(n) {if (n<1) {1} {n * factorial(n-1)}}', env);
+    // console.log(env);
+    assert.deepEqual(evalTortoise('factorial(2);', env), 2);
+  });
+});
+
+suite('Repeat blocks', function() {
+  test('basic repeat', function() {
+   assert.deepEqual(evalTortoise('repeat(4) {2}', {}), 2);
+  });
+});
+
+suite('Declaring variables in functions', function() {
+  test('basic declaration', function() {
+    var env = {bindings: {}, outer: {}};
+    evalTortoise('define x(a) {var b; b:= 2; b+a;}', env);
+    // console.log(env);
+    var j = evalTortoise('x(10)', env);
+    // console.log(env);
+    // console.log(j);
+  });
+});
+
+  </script>
+  <script>
+    $(function(){
+      mocha.run();
+    });
+  </script>
+</head>
+<body>
+  <div id="mocha"></div>
+</body>
+</html>
