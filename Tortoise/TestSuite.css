@@ -1,0 +1,24 @@
+.nav ul {
+	text-align: left;
+}
+.nav li {
+	display: inline;
+	padding: 5px;
+}
+
+.nav a {
+	font-family: Arial, Verdana, sans-serif;
+	color: #665544;
+	text-align: center;
+}
+
+.title {
+	text-align: center;
+	font-family: Arial, Verdana, sans-serif;
+	color: #665544;
+}
+
+#mocha h1 {
+	font-family: Arial, Verdana, sans-serif;
+	color: #665544;
+}

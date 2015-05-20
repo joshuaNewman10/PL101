@@ -1,0 +1,379 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Mocha Tests</title>
+  <link rel="stylesheet"
+    href="http://nathansuniversity.com/css/mocha.css" />
+  <script src=
+    "http://nathansuniversity.com/js/jquery-1.7.1.min.js">
+  </script>
+  <script src=
+    "http://nathansuniversity.com/js/chai.js">
+  </script>
+  <script src="http://nathansuniversity.com/js/mocha.js">
+  </script>
+  <script>mocha.setup('tdd')</script>
+  <script src='TScheemParser.js'></script>
+  <script src='TScheemInterpreter.js'></script>
+
+  <script>
+var assert = chai.assert;
+
+// My EvalScheem Interpreter Implementation
+
+// Complete Unit Tests
+// suite('Complete Tests',function() {
+  // test('a number', function() {
+  //   assert.deepEqual(evalScheemString('3', {}),
+  //     3);
+  // });
+  // test('a two digit number', function() {
+  //   assert.deepEqual(evalScheemString('24',{}),
+  //     24);
+  // });
+  // test('two digit addition', function() {
+  //   assert.deepEqual(evalScheemString('(+ 22 30)', globalEnv),
+  //     52);
+  // });
+  // test('a complex expression', function() {
+  //   assert.deepEqual(evalScheemString('(+ 2 (* 3 4))', globalEnv),
+  //     14);
+  // });
+// });
+
+// // Parsing Unit Tests
+// suite('parse', function() {
+//     test('a number', function() {
+//         assert.deepEqual(SCHEEM.parse('42'),
+//             42
+//         );
+//     });
+//     test('a variable', function() {
+//         assert.deepEqual(SCHEEM.parse('x'),
+//             'x');
+       
+//     });
+// });
+
+//Interpreter Unit Tests
+// suite('quote', function() {
+//     test('a number', function() {
+//         assert.deepEqual(
+//             evalScheem(['quote', 3], {}),
+//             3
+//         );
+//     });
+//     test('an atom', function() {
+//         assert.deepEqual(
+//             evalScheem(['quote', 'dog'], {}),
+//             'dog'
+//         );
+//     });
+//     test('a list', function() {
+//         assert.deepEqual(
+//             evalScheem(['quote', [1, 2, 3]], {}),
+//             [1, 2, 3]
+//         );
+//     });
+// });
+
+// suite('add', function() {
+//     test('two numbers', function() {
+//         assert.deepEqual(
+//             evalScheem(['+', 3, 5], globalEnv),
+//             8
+//         );
+//     });
+//     test('a number and an expression', function() {
+//         assert.deepEqual(
+//             evalScheem(['+', 3, ['+', 2, 2]], globalEnv),
+//             7
+//         );
+//     });
+//     test('a dog and a cat', function() {
+//         assert.deepEqual(
+//             evalScheem(['+', 'dog', 'cat'], globalEnv),
+//             42
+//         );
+//     });
+//     test('add two numbers',function() {
+//         assert.deepEqual(
+//             evalScheem(['+', 2, 2], globalEnv),
+//             4
+//         );    
+//     });
+// });
+
+
+// suite('environment lookup', function() {
+//   test('declaration', function() {
+//       var env = {};
+//       evalScheem(['define', 'x', 10], env);
+//       assert.deepEqual(env,{bindings:{x:10},outer:{}});
+//   });
+//   test('redefining', function() {
+//      evalScheem(['set!', 'x', 20], {x:10}),
+//      {bindings:{x:20},outer:{}};
+//   });
+// });
+
+
+// suite('testing comparisons', function() {
+//   test('Equality Comparison', function() {
+//     assert.deepEqual(
+//       evalScheem(['=', 4, 4], globalEnv),
+//       '#t');
+//   });
+//   test('Equality Comparison', function() {
+//     assert.deepEqual(
+//       evalScheem(['=', 4, 2], globalEnv),
+//       '#f');
+      
+//   });
+//   test('Less than (<) comparrison', function() {
+//     assert.deepEqual(
+//       evalScheem(['<', 4, 100], globalEnv),
+//       '#t');
+//   });
+// });
+
+// suite('cons, car, cdr tests', function() {
+//   test('cons test', function() {
+//     assert.deepEqual(
+//       evalScheem(['cons', 1, ['quote', [2, 3]]], globalEnv),
+//       [1, 2, 3]);
+//   });
+//   test('car test', function() {
+//     assert.deepEqual(
+//       evalScheem(['car', ['quote', [[1, 2], 3, 4]]], globalEnv),
+//       [1,2]);
+//   });
+//   test('cdr test', function() {
+//     assert.deepEqual(
+//       evalScheem(['cdr', ['quote', [[1, 2], 3, 4]]], globalEnv),
+//       [3, 4]);
+//   });
+// });
+
+// suite('complex multistep operations', function() {
+//   test('should update environment with result', function() {
+    
+//     var env = {bindings:{a:10, b:20, '+':globalEnv.bindings['+']}, outer:{}};
+//     var prg = ['begin',
+//             ['define', 'x', 5],
+//             ['set!', 'x', ['+', 'x', 1]],
+//             ['+', 2, 'x']];
+//     evalScheem(prg, env);
+//     env.bindings['+'] = 0;
+//     assert.deepEqual(env, {bindings:{a:10, b:20, x:6,'+':0},outer:{}});
+//   });
+//   test('treating programs as data (not evaluating)', function() {
+//     var prog = ['set!', 'x', ['quote', [1, '#t']]];
+//     var env = {bindings:{'x':10},outer:{}};
+//     evalScheem(prog,env);
+//     assert.deepEqual(env, {bindings:{'x': [1, '#t']},outer:{}});
+//   });
+//   test('Multipstep conditions', function() {
+//     var prog = ['if', ['=', 1, 1],
+//         ['if', ['=', 2, 3], 10, 11], 12];
+//     assert.deepEqual(
+//       evalScheem(prog, globalEnv), 11);
+//   });
+// });
+
+// suite('function application', function() {
+//   var always3 = function (x) { return 3; };
+//   var identity = function (x) { return x; };
+//   var plusone = function (x) { return x + 1; };
+//   var sum  = function(a ,b) {return a + b;};
+//   var sumAll = function() {var args = Array.prototype.slice.call(arguments); return args.reduce(sum);}
+//   var env = {
+//     bindings: {'always3': always3,
+//                'sum':sum,
+//                'sumAll':sumAll,
+//                'identity': identity,
+//                'plusone': plusone}, outer: { }};
+//   test('always return 3', function() {
+//     assert.deepEqual(evalScheem(['always3', 5], env), 3);
+//   });
+//   test('sum two numbers', function() {
+//     assert.deepEqual(evalScheem(['sum', 10, 100], env), 110);
+//   });
+//   test('sum range of numbers', function() {
+//     assert.deepEqual(evalScheem(['sumAll', 1, 2, 3, 4, 5], env), 15);
+//   });
+// });
+
+// suite('creating function values', function() {
+//   test('identity function', function() {
+//     assert.deepEqual(evalScheem([['lambda', 'x', 'x'], 5], { }),5);
+//   });
+//   test('lambda-one', function() {
+//     assert.deepEqual(evalScheem([['lambda-one', 'x', 'x'],5], globalEnv), 5);
+//   });
+//   test('lambda plus one function', function() {
+//     assert.deepEqual(evalScheem([[['lambda-one', 'x',
+//     ['lambda', 'y', ['+', 'x', 'y']]], 5], 3], globalEnv), 8);
+//   });
+//   test('lambda add function', function() {
+//     assert.deepEqual(evalScheem([['lambda', ['a', 'b'],['+', 'a', 'b']], 10, 20], globalEnv),30);
+//   });
+//   test('Passing result of a named function to a function as an argument', function() {
+//     var identity = function (x) { return x; };
+//     var bnd = {identity:identity};
+//     var env = {bindings:bnd, outer:{ }};
+//     assert.deepEqual(evalScheem([['lambda', 'func', 'func'], ['identity', 5]], env),5);
+//   });
+//   test('Passing result of an (anonymous) function to a function as an argument', function() {
+//     var identity = function (x) { return x; };
+//     var bnd = {identity:identity};
+//     var env = {bindings:bnd, outer:{ }};
+//     assert.deepEqual(evalScheem([['lambda', 'f', 'f'], [['lambda', 'x', 'x'], 5]], env),5);
+//   });
+//   test('closure references its own scope and outer scope', function() {
+//     assert.deepEqual(evalScheem([['lambda', 'a', [['lambda','b',['+', 'a', 'b']], 4]], 10], globalEnv), 14);
+//   });
+//   test('arg to function shadows global variable', function() {
+//     var a = ['quote', 'GLOBAL'];
+//     var bnd = {a:a};
+//     var env = {bindings:bnd, outer: {}};
+//     assert.deepEqual(evalScheem([['lambda', 'a', 'a'], ['quote', 'LOCAL']], env), 'LOCAL');
+//   });
+//   test('function modifies global variable', function() {
+//     var a = 100;
+//     var bnd = {a:a};
+//     var env = {bindings:bnd, outer: {}};
+//     evalScheem([['lambda', 'b', ['set!', 'a', 'b']], 10], env)
+//     assert.deepEqual(env, {bindings: {a:10}, outer: {}});
+//   });
+//   test('defining a function with an if condition', function() {
+//     var prog = ['define', 'condit', ['lambda', 'n', ['if', ['=', 'n', 0], 1, 5]]];
+//     evalScheem(prog, globalEnv);
+//     assert.deepEqual(evalScheem(['condit', 10], globalEnv), 5);
+//   });
+//   test('defining recursive factorial function', function() {
+//     var prog = ['define', 'factorial', ['lambda', 'n', ['if', ['=', 'n', 0], 1, ['*', 'n', ['factorial',['-', 'n', 1]]]]]];
+//     evalScheem(prog, globalEnv);
+//     var wow = evalScheem(['factorial', 5], globalEnv);
+//     assert.deepEqual(evalScheem(['factorial', 2], globalEnv), 2);
+
+//   });
+// });
+
+// //Curried Function Tests
+// suite('currying tests', function() {
+//   test('two var addition', function() {
+//     assert.deepEqual(evalScheem(['curr+', 4, 2], globalEnv), 6);
+//   }); 
+//   test('two var subtraction', function() {
+//     assert.deepEqual(evalScheem(['curr-', 4, 2], globalEnv), 2);
+//   });
+//   test('> cond', function() {
+//     assert.deepEqual(evalScheem(['curr>', 4, 2], globalEnv), '#t');
+//   });
+//   test('< cond', function() {
+//     assert.deepEqual(evalScheem(['curr<', 4, 2], globalEnv), '#f');
+//   });
+//   test('multiplication', function() {
+//     assert.deepEqual(evalScheem(['curr*', 10, 10], globalEnv), 100);
+//   });
+//   test('multistep mathetmatical', function() {
+//     assert.deepEqual(evalScheem(['curr*', 5, ['+', 4, 2]], globalEnv), 30);
+//   });
+//   test('curried func as input to another curryied func', function() {
+//     assert.deepEqual(evalScheem(['curr*', 5, ['curr+', 4, 2]], globalEnv), 30);
+//   });
+// });
+
+// suite('base type checking', function() {
+//   test('number', function() {
+//     assert.deepEqual(typeHandler(4, globalEnv), 'num');
+//   });
+//   test('boolean', function() {
+//     assert.deepEqual(typeHandler(true, globalEnv), 'bool');
+//   });
+//   test('var', function() {
+//     assert.deepEqual(typeHandler('+', globalEnv), 'function');
+//   });
+// });
+
+// suite('if statement type checking', function() {
+//   var ifCX = { bindings: {
+//     '+': arrow(base('num'), 
+//                arrow(base('num'), base('num'))),
+//     '<': arrow(base('num'),
+//                arrow(base('num'), base('bool'))) } };
+//   test('if true 3 5 has type num', function() {
+//     assert.deepEqual(typeExpr(['if', true, 3, 5], {}), base('num'));
+//   });
+//   test('if true true 5 is untyped', function() {
+//     assert.deepEqual(typeExpr(['if', true, true, 5], {}), 'Type Error');
+//   });
+//   test('if 3 3 5 is untyped', function() {
+//     assert.deepEqual(typeExpr(['if', 3, 3, 5], {}), 'Type Error');
+//   });
+//   test('(if ((< 1) 2) ((+ 2) 3) 5) has type num', function() {
+//     assert.deepEqual(typeExpr(['if', [['<', 1], 2], [['+', 2], 3], 5], ifCX), base('num'));
+//   });
+// });
+
+// suite('function application', function() {
+//   var context1 = { bindings: {
+//     'plus': arrow(base('num'), arrow(base('num'), base('num'))),
+//     'f': arrow(base('num'), arrow(base('num'), base('num'))),
+//     'x': base('num')}};
+//   var context2 = {bindings: {
+//     'f': arrow(base('num'), base('num'), base('num')),
+//     'x': arrow(base('num'), base('num')),
+//     'a': arrow(base('bool'), base('bool')) }};
+  
+//   test('plus has type num', function() {
+//     assert.deepEqual(typeExpr([['plus', 2], 3], context1), base('num'));
+//   });
+//   test('f has type num', function() {
+//     assert.deepEqual(typeExpr([['f', 10], 13], context1), base('num'));
+//   });
+//   test('x has type num', function() {
+//     assert.deepEqual(typeExpr(['x', 20], context2), base('num'));
+//   });
+//   test('a has type bool', function() {
+//     assert.deepEqual(typeExpr(['a', true], context2), base('bool'));
+//   });
+// });
+
+// suite('lambda-one statement type checking', function() {
+//   var context = { bindings: {
+//     'x': base('string'),
+//     '+': arrow(base('num'), 
+//                arrow(base('num'), base('num'))),
+//     '<': arrow(base('num'),
+//                arrow(base('num'), base('bool'))) } };
+//   test('lambda-one x num 5 has type num -> num', function() {
+//     assert.deepEqual(typeExpr(['lambda-one', 'x', base('num'), 5], {}), prettyType(arrow(base('num'), base('num'))));
+//   });
+//   test('(lambda-one x num 5) has type num -> num with x typed', function() {
+//     assert.deepEqual(typeExpr(['lambda-one', 'x', base('num'), 5], context), prettyType(arrow(base('num'), base('num'))));
+//   });
+//   test('(lambda-one x num x) has type num -> num', function() {
+//     assert.deepEqual(typeExpr(['lambda-one', 'x', base('num'), 'x'], context), prettyType(arrow(base('num'), base('num'))));
+//   });  
+//   test('lambda-one x (num -> num) (x 3)) has type (num -> num)', function() {
+//       assert.deepEqual(typeExpr(['lambda-one', 'x', arrow(base('num'), base('num')), ['x', 3]], context), prettyType(arrow(arrow(base('num'), base('num')), base('num'))));
+//   });
+// });
+
+suite('scheme evaluator with types', function() {
+ var a = compile(['define, base('num')], globalEnv);
+ console.log(a);
+});
+  </script>
+  <script>
+    $(function(){
+      mocha.run();
+    });
+  </script>
+</head>
+<body>
+  <div id="mocha"></div>
+</body>
+</html>

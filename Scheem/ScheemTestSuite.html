@@ -1,4 +1,4 @@
-  <html>
+<html>
 <head>
   <meta charset="utf-8">
   <title>Mocha Tests</title>
@@ -13,12 +13,32 @@
   <script src="http://nathansuniversity.com/js/mocha.js">
   </script>
   <script>mocha.setup('tdd')</script>
-  <script src="TempScheemParser.js"></script>
+  <script src="ScheemParser.js"></script>
   <script>
 var assert = chai.assert;
 
 // My EvalScheem Interpreter Implementation
-var add_binding = function (env, v, val) { //adds binding at top-most level
+var update = function (env, v, val) {
+    if(!(env.hasOwnProperty('bindings'))) {
+      return addBinding(env,v,val);
+    }
+    if(env.bindings.hasOwnProperty(v)) {
+      env.bindings[v] = val;
+      return val;
+    }
+    return update(env.outer,v,val);
+};
+
+var lookup = function (env, v) {
+    if (!(env.hasOwnProperty('bindings')))
+        throw new Error(v + " not found");
+    if (env.bindings.hasOwnProperty(v))
+        return env.bindings[v];
+    return lookup(env.outer, v);
+};
+
+//adds binding at top-most level
+var addBinding = function(env, v, val) {
     if(!(env.hasOwnProperty('bindings'))) {
       var bndg = {};
       bndg[v] = val;
@@ -29,26 +49,6 @@ var add_binding = function (env, v, val) { //adds binding at top-most level
     return env;
 };
 
-//Updates correct environment's var with new val
-var update = function (env, v, val) {
-    if(!(env.hasOwnProperty('bindings'))) {
-      return add_binding(env,v,val);
-    }
-    if(env.bindings.hasOwnProperty(v)) {
-      env.bindings[v] = val;
-      return val;
-    }
-    return update(env.outer,v,val);
-};
-
-//looks for var in any envrionemnt (goes inner to outer)
-var lookup = function (env, v) {
-    if (!(env.hasOwnProperty('bindings')))
-        throw new Error(v + " not found");
-    if (env.bindings.hasOwnProperty(v))
-        return env.bindings[v];
-    return lookup(env.outer, v);
-};
 
 var evalScheem = function (expr, env) { 
   if (expr === 'error') throw('Error');
@@ -56,7 +56,7 @@ var evalScheem = function (expr, env) {
   if (expr[0] === 'define') { //update
       var defVar = expr[1];
       var defVal = evalScheem(expr[2], env);
-      add_binding(env, defVar, defVal);
+      addBinding(env, defVar, defVal);
       return 0;
   } else if (expr[0] === 'set!') { //update
       var setVar = expr[1];
@@ -234,7 +234,7 @@ suite('add', function() {
     test('a dog and a cat', function() {
         assert.deepEqual(
             evalScheem(['+', 'dog', 'cat'], {}),
-            42
+            'Error: dog not found'
         );
     });
     test('add two numbers',function() {
@@ -395,7 +395,12 @@ suite('creating function values', function() {
     var wow = evalScheem(['factorial', 5], env);
     console.log(wow);
     assert.deepEqual(evalScheem(['factorial', 2], env), 2);
+  });
+});
 
+suite('UnderBar functions', function() {
+  test('_.each', function() {
+   
   });
 });
   </script>

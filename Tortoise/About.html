@@ -1,0 +1,55 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta charset = 'utf-8'>
+  <title>About Tortoise</title>
+  <link rel = 'stylesheet' type='text/css' href='Demo.css'/>
+  <link rel=  'stylesheet' type='text/css' href='960_12_col.css'/>
+
+</head>
+<body>
+  
+  <div class='container_12 clearfix'>
+    <header class='grid_12'>
+      <div class='logo'>
+        <img src='Images/Turtle.png'>
+      </div>
+      <div class='nav'>
+        <ul>
+          <li><a href='About.html'>About</a></li>
+          <li><a href='Demo.html'>Demo</a></li>
+          <li><a href='TestSuite.html'>Tests</a></li>
+        </ul>
+      </div>
+    </header>
+
+    <div class = 'info grid_12'>
+        <h1>What is Tortoise?</h1>
+        <p>Tortoise is an imperative programming language hooked up to the <a href='Raphael'>Raphael</a> graphics library. This allows users to input commands such as forward(100); right(50); and see the resulting pictoral ouput of these commands. Essentally, the tortoises tail is a 'pen' and when he is instructed to move about a window his tail will trace his path. The Raphael graphics library is an example of 'Turtle Graphics.' <br/> <br/>Turtle Graphics have been a useful tool in interesting young children in programming. They require the user to interact with the turtle as the language's syntax requires which eases users into a very logical and stepwise interaction. However, by giving the user immediate visual feedback of the user's commands the interaction becomes far more intuitive, immediate, enjoyable.</p>
+    </div>
+
+    <div class = 'technical grid_12'>
+      <h1>Behind the Scenes</h1>
+      <p>Behind the scenes there are three major components at work that allow for the successful operation of this program: parsing, interpreting, and the Raphael library.</p>
+    </div>
+      <div class = 'parser grid_4'>
+        <h2>Parser</h2>
+        <p>Parsing is the operation of taking a user's input sequence of commands (essentially a program) and making sure it correctly fits with the languages syntax. </p>
+      </div>
+      <div class = 'interpreter grid_4'>
+        <h2>Interpreter</h2>
+        <p>Once the input has been syntactically verified it can be either compiled or directly interpreted. Tortoise takes the latter approach and directly interprets the parsed input. This takes the form of a recursive evaluation function.</p>
+      </div>
+      <div class = 'Raphael grid_4'>
+        <h2>Raphael</h2>
+        <p>The final step is to actually modify the pixels on the screne by having our turtle Raphael move in response to the user's sequence of commands. </p>
+      </div>
+
+    <div class='footer grid_12'>
+      <p>&copy; Copyright 2015</p>
+    </div>
+  </div><!-- .container_12 -->
+
+</body>
+</html>

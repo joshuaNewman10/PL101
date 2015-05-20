@@ -1,0 +1,106 @@
+<head>
+  <meta charset='utf-8'>
+  <title>Tortoise Demo</title>
+  <link rel='stylesheet' type='text/css' href='960_12_col.css'/>
+  <link rel='stylesheet' type='text/css' href='Demo.css'/>
+  <script src='http://nathansuniversity.com/js/jquery-1.7.1.min.js'>
+  </script>
+  <script src="http://nathansuniversity.com/js/raphael-min.js">
+  </script>
+  <script src='Interpreter.js'></script>
+  <script src='Parser.js'></script>
+  <script src='Turtle.js'></script>
+</head>
+
+
+  <div class='container_12 clearfix'>
+    <header class='grid_12'>
+      <div class='logo'>
+        <img src='Images/Turtle.png'>
+      </div>
+      <div class='nav'>
+        <ul>
+          <li><a href='About.html'>About</a></li>
+          <li><a href='Demo.html'>Demo</a></li>
+          <li><a href='TestSuite.html'>Tests</a></li>
+        </ul>
+      </div>
+    </header>
+    <h1 class = 'title grid_12'>Tortoise Demo</h1>
+    <div class = 'code grid_8'>
+      <textarea id='input'>forward(100);</textarea>
+    </div>
+    <div class='examples grid_4'>
+      <ul>
+        <li><button type='input' class='circspiral'>Circular Spiral</button></li>
+        <li><button type='input' class='square'>Square</button></li>
+        <li><button type='input' class='spiral'>Spiral</button></li>
+      </ul>
+    </div>
+    <div id = 'console' class='grid_8'>
+    </div>
+    <div class='run grid_4'>
+      <input id = 'submit' type='button' value='Go Raphael!'/>
+    </div>
+    <div id = 'turtlecanvas' class='grid_12'>
+
+    </div>
+    <div class='footer grid_12'>
+      <p>&copy; Copyright 2014</p>
+    </div>
+  </div><!-- .container_12 -->
+
+<script>
+var log_console = function(msg) {
+    $('#console').append('<p>' + msg + '</p>');
+};
+// After page load
+$(function() {
+    var myTurtle = new Turtle("turtlecanvas");
+    var env = { };
+    addBinding(env, 'forward', function(d) { myTurtle.forward(d); });
+    addBinding(env, 'right', function(a) { myTurtle.right(a); });
+    addBinding(env, 'left', function(a) { myTurtle.left(a); });
+    addBinding(env, 'home', function() { myTurtle.home(); });
+
+    $('#submit').click(function() {
+        var user_text = $('#input').val();
+        myTurtle.clear();
+        $('#console').html('');
+        try {
+            var parsed = TORTOISE.parse(user_text);
+            try {
+                var result = evalStatements(parsed, env);
+                log_console('Successfully ran program!')
+            }
+            catch(e) {
+                log_console('Eval Error: ' + e);
+            }
+        }
+        catch(e) {
+            log_console('Parse Error: ' + e);
+        }
+        return result;
+    });
+
+    $('.examples').on('click', '.circspiral', function() {
+      var input = $('#input');
+      var program = 'repeat(18) {right(20); repeat(36) { forward(20); right(10); } }';
+      input.val(program);
+    });
+
+    $('.examples').on('click', '.square', function() {
+      var input = $('#input');
+      var program = 'repeat(4){forward(100); right(90);}';
+      input.val(program);
+    });
+    
+    $('.examples').on('click','.spiral', function() {
+      var input = $('#input');
+      var program = 'define spiral(size) {if (size < 100) { forward(size); right(15); spiral(size*1.02);} } spiral(5);'
+      input.val(program);
+    });
+      
+});
+</script>
+</body>

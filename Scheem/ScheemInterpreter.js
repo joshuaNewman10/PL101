@@ -16,7 +16,7 @@ var update = function (env, v, val) {
       env.bindings[v] = val;
       return val;
     }
-    return update(env.outer,v,val);
+    return update(env.outer, v, val);
 };
 
 //looks for var in any envrionemnt (goes inner to outer)

@@ -2,6 +2,7 @@
 <head>
   <meta charset="utf-8">
   <title>Mocha Tests</title>
+  <link rel='stylesheet' href='TestSuite.css'/>
   <link rel="stylesheet"
     href="http://nathansuniversity.com/css/mocha.css"/>
   <script src=
@@ -144,7 +145,6 @@ function evalStatement(stmt, env) {
 function evalTortoise(str, env) {
   try {
     var parse = TORTOISE.parse(str);
-    console.log(parse);
     var interpreted = evalStatements(parse, env);
   } catch(e) {
     console.log("somethign went wrong " + e);
@@ -160,7 +160,7 @@ suite('Simple Parser Tests', function() {
     assert.deepEqual(TORTOISE.parse('hi'), [{tag:'ident', name:'hi'}]);
   });
   test('declaring a variable', function() {
-    assert.deepEqual(TORTOISE.parse('var josh;'), [{tag:'ident', name:'josh'}]);
+    assert.deepEqual(TORTOISE.parse('var josh;'), [{tag:'var', name:'josh'}]);
   });
   test('defining a variable', function() {
     assert.deepEqual(TORTOISE.parse('j := 4;'), [{tag:':=', left:'j', right:4}]);
@@ -214,7 +214,6 @@ suite('Interpretor Tests', function() {
     assert.deepEqual(evalStatement(4, {}), 4);
   });
   test('a variable dec', function() {
-    console.log('var dec');
     assert.deepEqual(evalStatement({tag:'var', name:'j'}, {}), 0);
   });
   test('a variable definition', function() {
@@ -274,7 +273,6 @@ suite('Recursive Tests', function() {
   test('calling a recursive function', function() {
     var env = {bindings: {}, outer: {}};
     evalTortoise('define factorial(n) {if (n<1) {1} {n * factorial(n-1)}}', env);
-    // console.log(env);
     assert.deepEqual(evalTortoise('factorial(2);', env), 2);
   });
 });
@@ -289,10 +287,8 @@ suite('Declaring variables in functions', function() {
   test('basic declaration', function() {
     var env = {bindings: {}, outer: {}};
     evalTortoise('define x(a) {var b; b:= 2; b+a;}', env);
-    // console.log(env);
     var j = evalTortoise('x(10)', env);
-    // console.log(env);
-    // console.log(j);
+    
   });
 });
 
@@ -304,6 +300,16 @@ suite('Declaring variables in functions', function() {
   </script>
 </head>
 <body>
+  <div class='nav'>
+        <ul>
+          <li><a href='About.html'>About</a></li>
+          <li><a href='Demo.html'>Demo</a></li>
+          <li><a href='TestSuite.html'>Tests</a></li>
+        </ul>
+      </div>
+  <h1 class = 'title'>Tortoise Test Suite</h1>
   <div id="mocha"></div>
+<footer>
+</footer>
 </body>
 </html>

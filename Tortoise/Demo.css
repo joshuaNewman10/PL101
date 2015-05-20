@@ -1,0 +1,62 @@
+* {
+	font-family: Arial, Verdana, sans-serif;
+	color: #665544;
+	text-align: center;
+}
+
+ .code, #console, .footer, .examples, .run, #turtlecanvas, .info, .technical, .parser, .interpreter, .Raphael{
+	background-color: #efefef;
+	margin-top: 20px;
+	padding: 10px 0px 5px 0px;
+}
+
+.code, #console, .examples, .run {
+	height: 100px;
+}
+
+
+.nav {
+	float: right;
+}
+
+.nav li {
+	display: inline;
+	padding: 5px;
+}
+
+.logo img{
+  height:40px;
+  width:60px;
+  float:left;
+}
+
+#input{
+  width: 600px;
+  height: 90px;
+  text-align: left;
+}
+
+.examples li {
+	display: inline;
+	padding: 5px;
+}
+
+#submit {
+  width: 250px;
+  font-size: 20px;
+  position: relative;
+  top: 50px
+
+}
+
+#turtlecanvas {
+	height: 500px;
+}
+
+.info p {
+	text-align: left;
+}
+
+.technical p {
+	text-align: left;
+}
