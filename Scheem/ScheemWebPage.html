@@ -6,9 +6,9 @@
   <script src ='http://nathansuniversity.com/js/jquery-1.7.1.min.js'>
   </script>
   <link rel='stylesheet' href='ScheemCss.css'>
-  <script src='ScheemInterpreterUpdated.js'>
+  <script src='../ScheemInterpreterUpdated.js'>
   </script>
-  <script src='TempScheemParser.js'>
+  <script src='ScheemParser.js'>
   </script>
 </head>
 
@@ -28,6 +28,9 @@
 
 
 <script>
+    var env = {bindings:{}, outer: {}};
+    var prog = ['define', 'factorial', ['lambda', 'n', ['if', ['=', 'n', 0], 1, ['*', 'n', ['factorial',['-', 'n', 1]]]]]];
+    evalScheem(prog,env);
   // Utility function to log messages
   var log_console = function(msg) {
     $('.console').append('<p>' + msg + '</p>');
@@ -42,7 +45,7 @@
         var parsed = SCHEEM.parse(user_text);
         log_console('Parsed: ' + JSON.stringify(parsed));
         try {
-          var result = evalScheem(parsed, {});
+          var result = evalScheem(parsed, env);
           log_console('Result: ' + JSON.stringify(result));
         }
         catch(e) {

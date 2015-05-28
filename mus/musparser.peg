@@ -1,0 +1,214 @@
+//Allowing Chords :)
+start =
+  seq
+
+seq = 
+  l:note*  " " r:seq
+  {return {tag: 'seq', left: l[0], right: r};}
+  / l:note*  " " r:note*  
+  {return {tag: 'seq', left: l[0], right: r[0]};}
+  /note
+  /r:rep s:seq*
+  {return {tag:'seq', left:r, right: s[0]};}
+  /c:chord " " s:seq*
+  {return {tag:'seq', left:c, right: s[0]};}
+
+rep =
+ "'rep'[" d:duration "]" s:seq "'endr'"
+   {return {tag:'rep',count: d, section: s};}
+  
+chord =
+  "'par'" s:seq "'endp'" 
+   {return {tag: 'par', left:s.left, right: s.right};}   
+
+note = 
+  p:pitch "["d:duration"]"
+  {return {tag: 'note', pitch: p, dur: d};}
+  /a:rest
+   {return a;}
+
+rest = 
+  "'r'" "["d:duration"]"
+  {return {tag: 'rest', dur: d};}
+
+pitch = 
+   "'"l:letter o:octave"'"
+    {return l + o;}
+
+letter =
+    [abcdefg]
+
+octave =
+  integer
+
+duration =
+  i:integer+
+  {return i.join('');}
+
+integer = 
+  [0-9]
+
+
+
+
+
+//Allowing Rests
+
+start =
+  seq
+
+seq = 
+  l:note*  " " r:seq
+  {return {tag: 'seq', left: l[0], right: r};}
+  / l:note*  " " r:note*  
+  {return {tag: 'seq', left: l[0], right: r[0]};}
+  /note
+
+note = 
+  p:pitch "["d:duration"]"
+  {return {tag: 'note', pitch: p, dur: d};}
+  /a:rest
+   {return a;}
+
+rest = 
+  "'r'" "["d:duration"]"
+  {return {tag: 'rest', dur: d};}
+
+pitch = 
+   "'"l:letter o:octave"'"
+    {return l + o;}
+
+letter =
+    [abcdefg]
+
+octave =
+  integer
+
+duration =
+  i:integer+
+  {return i.join('');}
+
+integer = 
+  [0-9]
+
+
+//Allowing Nested Sequences
+
+start =
+  seq
+
+seq = 
+  l:note* " " r:seq
+  {return {tag: 'seq', left: l[0], right: r};}
+  / l:note* " " r:note*
+  {return {tag: 'seq', left: l[0], right: r[0]};}
+  /note
+
+note = 
+  p:pitch "["d:duration"]"
+  {return {tag: 'note', pitch: p, dur: d};}
+
+pitch = 
+   "'"l:letter o:octave"'"
+    {return l + o;}
+
+letter =
+    [abcdefg]
+
+octave =
+  integer
+
+duration =
+  i:integer+
+  {return i.join('');}
+
+integer = 
+  [0-9]
+
+
+//Sequences of Two Nodes
+
+start =
+  seq
+
+seq = 
+  l:note* " " r:note*
+  {return {tag: 'seq', left: l[0], right: r[0]};}
+
+note = 
+  p:pitch "["d:duration"]"
+  {return {tag: 'note', pitch: p, dur: d};}
+
+pitch = 
+   "'"l:letter o:octave"'"
+    {return l + o;}
+
+letter =
+    [abcdefg]
+
+octave =
+  integer
+
+duration =
+  i:integer+
+  {return i.join('');}
+
+integer = 
+  [0-9]
+
+
+
+
+//Note
+
+start =
+  note
+
+note = 
+  p:pitch "["d:duration"]"
+  {return {tag: 'note', pitch: p, dur: d};}
+
+pitch = 
+   "'"l:letter o:octave"'"
+    {return l + o;}
+
+letter =
+    [abcdefg]
+
+octave =
+  integer
+
+duration =
+  i:integer+
+  {return i.join('');}
+
+integer = 
+  [0-9]
+
+
+
+//oops this is a joint parser-compiler
+
+start =
+  note
+
+note = 
+  all:("{tag: 'note', pitch: '"pitch"', dur: "duration "};")
+  {var noteArr = [{tag: 'note', pitch: all[1].join(''), dur: all[3].join('')}];
+  return noteArr;
+}
+
+pitch = 
+   letter octave
+
+letter =
+    [abcdefg]
+
+octave =
+  integer
+
+duration =
+  integer+
+
+integer = 
+  [0-9]

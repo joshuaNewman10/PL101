@@ -1,0 +1,378 @@
+  <html>
+<head>
+  <meta charset="utf-8">
+  <title>Mocha Tests</title>
+  <link rel="stylesheet"
+    href="http://nathansuniversity.com/css/mocha.css"/>
+  <script src=
+    "http://nathansuniversity.com/js/jquery-1.7.1.min.js">
+  </script>
+  <script src=
+    "http://nathansuniversity.com/js/chai.js">
+  </script>
+  <script src="http://nathansuniversity.com/js/mocha.js">
+  </script>
+  <script>mocha.setup('tdd')</script>
+  <script src="../Parser.js"></script>
+  <script>
+
+var assert = chai.assert;
+
+
+function evalTortoise(str, env) {
+  try {
+    var parse = TORTOISE.parse(str);
+    var interpreted = evalFull(parse, env);
+  } catch(e) {
+    console.log("somethign went wrong " + e);
+  }
+  return interpreted;
+}
+
+var globalEnv = {bindings: {}, outer: {}};
+
+
+function thunk(f) {
+  var args = Array.prototype.slice.call(arguments, 1);
+  return {tag:'thunk', func: f, args: args};
+}
+
+function thunkValue(x) {
+  return {tag: 'value', value:x};
+}
+
+function evalFull(expr, env) {
+  var state = stepStart(expr, env);
+  while(!state.done) {
+    step(state);
+  }
+  return state.data;
+}
+
+function stepper(env, val, cont) { //helper function when defining var value
+  var state;
+  if(!val.data) {
+    state = {data:val, done:false}
+  } else {
+    state = val;
+  }
+  while(!state.done) {
+    step(state);
+  }
+  return cont? cont(state.data) : state.data;
+}
+
+function stepStart(expr, env) {
+  return {
+    data: evalStatements(expr, env, thunkValue),
+    done: false
+  };
+}
+
+function step(state) {
+  if(state.data.tag === 'value') {
+    state.done = true;
+    state.data = state.data.value;
+  } else if (state.data.tag === 'thunk') {
+      state.data = state.data.func.apply(null, state.data.args);
+  } else {
+      throw new Error('Bad Thunk');
+  }
+}
+
+var lookup = function (env, v) {
+    if (!(env.hasOwnProperty('bindings'))) {
+      throw new Error(v + " not found");
+    }
+    if (env.bindings.hasOwnProperty(v)) {
+      return env.bindings[v];
+    }
+    return lookup(env.outer, v);
+};
+
+//adds binding at top-most level
+var addBinding = function(env, v, val) {
+    if(!(env.hasOwnProperty('bindings'))) {
+      var bndg = {};
+      bndg[v] = val;
+      env.outer = {};
+      env.bindings = bndg;
+    }
+    env.bindings[v] = val;
+    return env;
+};
+
+//Updates correct environment's var with new val
+var update = function (env, v, val) {
+  if(!(env.hasOwnProperty('bindings'))) {
+    return addBinding(env, v, val);
+  }
+  if(env.bindings.hasOwnProperty(v)) {
+    env.bindings[v] = val;
+    return val;
+  }
+  return update(env.outer, v, val);
+};
+
+function evalStatements(seq, env, cont) {
+  var i;
+  var val = undefined;
+  for(i=0; i<seq.length; i++) {
+    val = evalStatement(seq[i], env, cont);
+  } 
+  return val;
+}
+
+function evalStatement(stmt, env, cont) {
+  var val = undefined;
+  if(!(stmt.tag)) {
+    return evalExpr(stmt, env, cont);
+  }
+  if (stmt.tag === 'ignore') { //single expression
+    return evalExpr(stmt.body, env, cont); 
+  } else if (stmt.tag === 'var') {
+      addBinding(env, stmt.name, 0);
+      return thunk(cont, 0);
+  } else if (stmt.tag === ':=') {
+      val = evalExpr(stmt.right, env, cont);
+      update(env, stmt.left, stepper(env, val));
+      return val;
+  } else if (stmt.tag === 'if') {
+    return thunk(
+      evalExpr, stmt.expression, env,
+      function(cond) {
+        if(cond) {
+          return thunk(evalStatements, stmt.i, env, cont);
+        } else {
+          return thunk(evalStatements, stmt.e, env, cont);
+        }
+      }
+    );
+  } else if (stmt.tag === 'repeat') {
+      return thunk(
+        evalExpr, stmt.expression, env,
+        function(count) {
+          while(--count >0) {
+            val = evalStatements(stmt.body, env, cont);
+          }
+          return val;
+        }
+      );
+  } else if (stmt.tag === 'define') {
+      //name args body
+      var newFunc = function() {
+        var i;
+        var newEnv;
+        var newBindings = {};
+        var thunkArgs = arguments[0];
+        var cont = arguments[1];
+
+        for(i=0; i<stmt.args.length; i++) {
+          newBindings[stmt.args[i]] = stepper(env, thunkArgs[i]);
+        }
+
+        newEnv = {bindings:newBindings, outer:env};
+        return thunk(
+          evalStatements, stmt.body, newEnv, cont
+        );
+      };
+      addBinding(env, stmt.name, newFunc);
+      return thunk(cont, 0);
+  } else {
+     return evalExpr(stmt, env, cont);
+  }
+}
+
+function evalExpr(expr, env, cont) { //recursive Tortoise expression Eval
+  //primitives
+  if(typeof expr === 'number') {
+  	return thunk(cont, expr);
+  }
+  //Simple built in binary operators
+  if (expr.tag === 'ident') {
+    return thunk(cont, lookup(env, expr.name));
+  } else if (expr.tag === '<') {
+      return thunk(
+        evalExpr, expr.left, env,
+        function(v1) {
+          return thunk(
+            evalExpr, expr.right, env,
+            function(v2) {
+              return thunk(cont, v1 < v2);
+            }
+          );
+        }
+      );
+  } else if (expr.tag === '>') {
+      return thunk(
+        evalExpr, expr.left, env,
+        function(v1) {
+          return thunk(
+            evalExpr, expr.right, env,
+            function(v2) {
+              return thunk(cont, v1 > v2);
+            }
+          );
+        }
+      );
+  } else if (expr.tag === '+') {
+      return thunk(
+        evalExpr, expr.left, env,
+        function(v1) {
+          return thunk(
+            evalExpr, expr.right, env,
+            function(v2) {
+              return thunk(cont, v1 + v2);
+            }
+          );
+        }
+      );
+  } else if (expr.tag === '-') {
+      return thunk(
+        evalExpr, expr.left, env,
+        function(v1) {
+          return thunk(
+            evalExpr, expr.right, env,
+            function(v2) {
+              return thunk(cont, v1 - v2);
+            }
+          );
+        }
+      );
+  } else if (expr.tag === '*') {
+      return thunk(
+        evalExpr, expr.left, env,
+        function(v1) {
+          return thunk(
+            evalExpr, expr.right, env,
+            function(v2) {
+              return thunk(cont, v1 * v2);
+            }
+          );
+        }
+      );
+  } else if (expr.tag === '/') {
+      return evalDiv(expr.left, expr.right, env, cont);
+  } else if (expr.tag === 'call') {
+      var func = lookup(env, expr.name);
+      var envArgs = [];
+      var i=0;
+      for(; i<expr.args.length; i++) {
+        envArgs.push(evalExpr(expr.args[i], env, cont));
+      }
+      return thunk(func, envArgs, cont);
+  }
+}
+
+function evalDiv(top, bottom, env, cont) {
+  return thunk(
+    evalExpr, top, env,
+    function(v1) {
+      return thunk(
+        evalExpr, bottom, env,
+        function(v2) {
+          return thunk(cont, v1 / v2);
+        }
+      );
+    }
+  );
+}
+
+suite('basic mathematical operations', function() {
+  test('two var addiiton', function() {
+    assert.deepEqual(evalTortoise('4+4',globalEnv), 8);
+  });
+  test('two var subtraction', function() {
+    assert.deepEqual(evalTortoise('8-4',globalEnv), 4);
+  });
+  test('two var multiplication', function() {
+    assert.deepEqual(evalTortoise('4*4', globalEnv),16);
+  });
+  test('two var division', function() {
+    assert.deepEqual(evalTortoise('8/2', globalEnv), 4);
+  });
+  test('three var addition', function() {
+   assert.deepEqual(evalTortoise('2+2+2', globalEnv), 6);
+  });
+});
+suite('mixed mathematical operations', function() {
+  test('addition and multiplication', function() {
+    assert.deepEqual(evalTortoise('2*2+4', globalEnv), 8);
+  });
+  test('multiplication, division, subtraction, addition', function() {
+    assert.deepEqual(evalTortoise('8*2/4+2-2', globalEnv), 4);
+  });
+});
+
+suite('variable declarations and definitions', function() {
+  test('variable dec', function() {
+    assert.deepEqual(evalTortoise('var j;', globalEnv), 0);
+  });
+  test('simple variable def', function() {
+    assert.deepEqual(evalTortoise('j :=2;', globalEnv), 2);
+  }); 
+  test('addition with a variable ', function() {  
+    assert.deepEqual(evalTortoise('j+4;', globalEnv), 6);
+  });
+  test('setting var to result of var expression', function() {
+    evalTortoise('var x;', globalEnv);
+    assert.deepEqual(evalTortoise('x := j*2;', globalEnv), 4);
+  });
+});
+
+suite('logical comparison tests', function() {
+  test('> comparison', function() {
+    assert.deepEqual(evalTortoise('4 > 2', globalEnv), true);
+  }); 
+  test('< comparison', function() {
+    assert.deepEqual(evalTortoise('4 < 2', globalEnv), false);
+  });
+  test('single if statement', function() {
+    assert.deepEqual(evalTortoise('if (10 > 22) {4} {5}', globalEnv), 5);
+  });
+});
+
+suite('repeat block tests', function() {
+  test('basic repeat(4) block', function() {
+    assert.deepEqual(evalTortoise('repeat(4) {5}', globalEnv), 5);
+  });
+  test('repeat block with varible', function() {
+    var localEnv = {bindings:{a:0}, outer:{}};
+    assert.deepEqual(evalTortoise('repeat(3) {a := a + 1;}', localEnv), 3);
+  });
+}); 
+
+suite('defining functions', function() {
+  test('simple one var adding function', function() {
+    assert.deepEqual(evalTortoise('define add(x) {x+10;}', globalEnv), 0);
+  });
+  test('defining two var function', function() {
+     assert.deepEqual(evalTortoise('define addTwo(x,y) {x+y;}', globalEnv), 0);
+  });
+});
+
+suite('calling functions', function() {
+  test('one var adding function', function() {
+    var tempEnv = {bindings:{}, outer: {}};
+    evalTortoise('define addTen(x) {x+10}', tempEnv);
+    assert.deepEqual(evalTortoise('addTen(10)', tempEnv), 20);
+  });
+  test('two var adding function', function() {
+    var tempEnv = {bindings: {}, outer: {}};
+    evalTortoise('define add(a,b) {a+b}', tempEnv);
+    assert.deepEqual(evalTortoise('add(10,20)', tempEnv), 30);
+  });
+});
+
+
+</script>
+  <script>
+    $(function(){
+      mocha.run();
+    });
+  </script>
+</head>
+<body>
+  <div id="mocha"></div>
+</body>
+</html>

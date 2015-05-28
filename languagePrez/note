@@ -1,0 +1,3 @@
+[ { tag: 'note', pitch: 'a3', start: 0, dur: 250 },
+  { tag: 'note', pitch: 'b3', start: 250, dur: 250 },
+  { tag: 'note', pitch: 'c4', start: 500, dur: 500 } ]
